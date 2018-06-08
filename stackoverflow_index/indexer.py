@@ -84,11 +84,12 @@ if __name__ == "__main__":
     f = open('../data/Posts.xml', encoding="utf8")
     posts = stream(f)
     for x in posts:
-        if cnt%1000 == 0:
+        if cnt % 1000 == 0:
             print(cnt)
-        if cnt > 50000:
-            break
-        indexer(x, writer)
+        try:
+            indexer(x, writer)
+        except:
+            pass
         cnt += 1
     writer.commit()
     f.close()
