@@ -3,10 +3,11 @@ from xmljson import badgerfish as bf
 from xml.etree.ElementTree import fromstring
 from whoosh import index
 
-from whoosh.fields import Schema, TEXT, KEYWORD, ID, STORED
+from whoosh.fields import Schema, TEXT, DATETIME, ID, STORED
 from whoosh.analysis import SimpleAnalyzer
 from html.parser import HTMLParser
 from html import unescape
+import dateutil.parser
 
 
 """
@@ -60,11 +61,12 @@ def indexer(obj, writer):
     if '@ViewCount' in row:
         view_count = str(row['@ViewCount'])
     body = strip_tags(unescape( row['@Body'] ))
-    writer.add_document(id=str(row['@Id']), creation_date=row['@CreationDate'], view_count=view_count, title=title, body=body)
+    datetime = dateutil.parser.parse(row['@CreationDate'])
+    writer.add_document(id=str(row['@Id']), creation_date=datetime, view_count=view_count, title=title, body=body)
 
 
 schema = Schema(id=ID(stored=True),
-                creation_date=ID(stored=True),
+                creation_date=DATETIME,
                 view_count=ID(stored=True),
                 title=TEXT(analyzer=SimpleAnalyzer()),
                 body=TEXT(analyzer=SimpleAnalyzer())
