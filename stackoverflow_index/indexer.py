@@ -93,15 +93,6 @@ if __name__ == "__main__":
             pass
 
         cnt += 1
-        if cnt % 100000 == 0:
-            todel = set()
-            # prune
-            for x in inv_idx:
-                if len(inv_idx[x]) < 10:
-                    todel.add(x)
-            for y in todel:
-                del inv_idx[y]
-            print('Pruned', len(todel))
 
     print('Writing')
     with open('./post_inv_idx.json', mode='wb') as w:
