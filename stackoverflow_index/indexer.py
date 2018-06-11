@@ -62,6 +62,8 @@ def indexer(obj, inv_idx, tokenizer):
         title = row['@Title']
     if '@ViewCount' in row:
         view_count = int(row['@ViewCount'])
+    if 'import' not in row['@Body']:
+        return
     body = strip_tags(unescape( row['@Body'] ))
     datetime = dateutil.parser.parse(row['@CreationDate'])
     thisdoc = set()
