@@ -107,4 +107,5 @@ if __name__ == "__main__":
                 w.write(struct.pack('i', v.id))
                 w.write(struct.pack('i', v.date))
                 w.write(struct.pack('i', v.viewcount))
+                w.write(bytes(',', encoding="utf8"))
             w.write(bytes('\n', encoding="utf8"))
