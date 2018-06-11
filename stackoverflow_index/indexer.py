@@ -71,7 +71,7 @@ def indexer(obj, inv_idx, tokenizer):
         thisdoc.add(token.text)
         if token.text not in inv_idx:
             inv_idx[token.text] = list()
-        inv_idx[token.text].append( int(datetime.timestamp()) )
+        inv_idx[token.text].append( (int(row['@Id']), int(datetime.timestamp()), view_count) )
 
 if __name__ == "__main__":
     cnt = 0
@@ -101,7 +101,6 @@ if __name__ == "__main__":
                 del inv_idx[y]
             print('Pruned', len(todel))
 
-
     print('Writing')
     with open('./post_inv_idx.json', mode='wb') as w:
         for key in sorted(inv_idx):
@@ -110,8 +109,8 @@ if __name__ == "__main__":
             leng += len(k)
             bar = []
             for v in inv_idx[key]:
-                b = struct.pack('i', v)
-                assert(len(b) == 4)
+                b = struct.pack('iii', v[0], v[1], v[2])
+                assert(len(b) == 12)
                 bar.append(b)
                 leng += len(b)
             w.write(struct.pack('i', leng))
