@@ -72,11 +72,14 @@ def indexer(obj, inv_idx, tokenizer):
         view_count = int(row['@ViewCount'])
     body = strip_tags(unescape( row['@Body'] ))
     datetime = dateutil.parser.parse(row['@CreationDate'])
+    thisdoc = set()
     for token in tokenizer(body):
+        if token.text in thisdoc:
+            continue
+        thisdoc.add(token.text)
         if token.text not in inv_idx:
             inv_idx[token.text] = list()
         inv_idx[token.text].append( doc(int(row['@Id']), datetime.timestamp(), view_count) )
-
 
 if __name__ == "__main__":
     cnt = 0
