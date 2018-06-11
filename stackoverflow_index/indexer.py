@@ -98,14 +98,23 @@ if __name__ == "__main__":
         except:
             pass
         cnt += 1
+        if cnt > 20000:
+            break
 
     print('Writing')
     with open('./post_inv_idx.json', mode='wb') as w:
         for key in sorted(inv_idx):
-            w.write(bytes(key, encoding="utf8"))
+            leng = 0
+            k = bytes(key, encoding="utf8")
+            leng += len(k)
+            bar = []
             for v in inv_idx[key]:
-                w.write(struct.pack('i', v.id))
-                w.write(struct.pack('i', v.date))
-                w.write(struct.pack('i', v.viewcount))
-                w.write(bytes(',', encoding="utf8"))
-            w.write(bytes('\n', encoding="utf8"))
+                b = struct.pack('iii', v.id, v.date, v.viewcount)
+                assert(len(b) == 12)
+                bar.append(b)
+                leng += len(b)
+            w.write(struct.pack('i', leng))
+            w.write(struct.pack('i', len(k)))
+            w.write(k)
+            for x in bar:
+                w.write(x)
