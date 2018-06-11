@@ -1,13 +1,15 @@
-import os, os.path
+
 from xmljson import badgerfish as bf
 from xml.etree.ElementTree import fromstring
-from whoosh import index
 
-from whoosh.fields import Schema, TEXT, DATETIME, ID, STORED
 from whoosh.analysis import SimpleAnalyzer
 from html.parser import HTMLParser
 from html import unescape
 import dateutil.parser
+import json
+import os
+import psutil
+import struct
 
 
 """
@@ -51,46 +53,55 @@ def strip_tags(html):
     s.feed(html)
     return s.get_data()
 
+class doc:
+    def __init__(self, id, date, viewcount):
+        self.id = id
+        self.date = int(date)
+        self.viewcount = int(viewcount)
 
-def indexer(obj, writer):
+    def __str__(self):
+        return str(self.id) + ',' + str(self.date) + ',' + str(self.viewcount)
+
+def indexer(obj, inv_idx, tokenizer):
     row = obj['row']
     title = u''
-    view_count = u'-1'
+    view_count = -1
     if '@Title' in row:
         title = row['@Title']
     if '@ViewCount' in row:
-        view_count = str(row['@ViewCount'])
+        view_count = int(row['@ViewCount'])
     body = strip_tags(unescape( row['@Body'] ))
     datetime = dateutil.parser.parse(row['@CreationDate'])
-    writer.add_document(id=str(row['@Id']), creation_date=datetime, view_count=view_count, title=title, body=body)
-
-
-schema = Schema(id=ID(stored=True),
-                creation_date=DATETIME,
-                view_count=ID(stored=True),
-                title=TEXT(analyzer=SimpleAnalyzer()),
-                body=TEXT(analyzer=SimpleAnalyzer())
-                )
+    for token in tokenizer(body):
+        if token.text not in inv_idx:
+            inv_idx[token.text] = list()
+        inv_idx[token.text].append( doc(int(row['@Id']), datetime.timestamp(), view_count) )
 
 
 if __name__ == "__main__":
     cnt = 0
-    if not os.path.exists("./stackoverflow_idx"):
-        os.mkdir("stackoverflow_idx")
 
-    ix = index.create_in("stackoverflow_idx", schema)
-    writer = ix.writer()
+    inv_idx = dict()
+    tokenizer = SimpleAnalyzer()
 
     f = open('../data/Posts.xml', encoding="utf8")
     posts = stream(f)
     for x in posts:
         if cnt % 1000 == 0:
-            print(cnt)
+            process = psutil.Process(os.getpid())
+            print('docs: ', cnt, 'tokens:', len(inv_idx), 'mem:', process.memory_info().rss)
         try:
-            indexer(x, writer)
+            indexer(x, inv_idx, tokenizer)
         except:
             pass
         cnt += 1
-    writer.commit()
-    f.close()
 
+    print('Writing')
+    with open('./post_inv_idx.json', mode='wb') as w:
+        for key in sorted(inv_idx):
+            w.write(bytes(key, encoding="utf8"))
+            for v in inv_idx[key]:
+                w.write(struct.pack('i', v.id))
+                w.write(struct.pack('i', v.date))
+                w.write(struct.pack('i', v.viewcount))
+            w.write(bytes('\n', encoding="utf8"))
