@@ -53,14 +53,6 @@ def strip_tags(html):
     s.feed(html)
     return s.get_data()
 
-class doc:
-    def __init__(self, id, date, viewcount):
-        self.id = id
-        self.date = int(date)
-        self.viewcount = int(viewcount)
-
-    def __str__(self):
-        return str(self.id) + ',' + str(self.date) + ',' + str(self.viewcount)
 
 def indexer(obj, inv_idx, tokenizer):
     row = obj['row']
@@ -79,7 +71,7 @@ def indexer(obj, inv_idx, tokenizer):
         thisdoc.add(token.text)
         if token.text not in inv_idx:
             inv_idx[token.text] = list()
-        inv_idx[token.text].append( doc(int(row['@Id']), datetime.timestamp(), view_count) )
+        inv_idx[token.text].append( (int(row['@Id']), int(datetime.timestamp()), view_count) )
 
 if __name__ == "__main__":
     cnt = 0
@@ -97,9 +89,17 @@ if __name__ == "__main__":
             indexer(x, inv_idx, tokenizer)
         except:
             pass
+
         cnt += 1
-        if cnt > 20000:
-            break
+        if cnt % 100000 == 0:
+            todel = set()
+            # prune
+            for x in inv_idx:
+                if len(inv_idx[x]) < 10:
+                    todel.add(x)
+            for y in todel:
+                del inv_idx[y]
+            print('Pruned', len(todel))
 
     print('Writing')
     with open('./post_inv_idx.json', mode='wb') as w:
@@ -109,7 +109,7 @@ if __name__ == "__main__":
             leng += len(k)
             bar = []
             for v in inv_idx[key]:
-                b = struct.pack('iii', v.id, v.date, v.viewcount)
+                b = struct.pack('iii', v[0], v[1], v[2])
                 assert(len(b) == 12)
                 bar.append(b)
                 leng += len(b)
