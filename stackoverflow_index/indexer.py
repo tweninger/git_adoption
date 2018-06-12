@@ -58,6 +58,11 @@ def indexer(obj, inv_idx, tokenizer):
     row = obj['row']
     title = u''
     view_count = -1
+    if '@Tags' not in row:
+        return
+    elif 'python' not in row['@Tags']:
+        return
+
     if '@Title' in row:
         title = row['@Title']
     if '@ViewCount' in row:
@@ -74,6 +79,7 @@ def indexer(obj, inv_idx, tokenizer):
         if token.text not in inv_idx:
             inv_idx[token.text] = list()
         inv_idx[token.text].append( (int(row['@Id']), int(datetime.timestamp()), view_count) )
+
 
 if __name__ == "__main__":
     cnt = 0
@@ -95,10 +101,15 @@ if __name__ == "__main__":
         cnt += 1
 
     print('Writing')
-    with open('./post_inv_idx.json', mode='wb') as w:
+    with open('./post_inv_idx.dat', mode='wb') as w, open('./idx_offset.dat', mode='wb') as offset:
         for key in sorted(inv_idx):
+            cur_loc = w.tell()
             leng = 0
             k = bytes(key, encoding="utf8")
+            k = bytes(key, encoding="utf8")
+            offset.write(k)
+            offset.write(struct.pack('i', cur_loc))
+
             leng += len(k)
             bar = []
             for v in inv_idx[key]:
