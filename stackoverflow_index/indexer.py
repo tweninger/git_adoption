@@ -101,14 +101,10 @@ if __name__ == "__main__":
         cnt += 1
 
     print('Writing')
-    with open('./post_inv_idx.dat', mode='wb') as w, open('./idx_offset.dat', mode='wb') as offset:
+    with open('./post_inv_idx.dat', mode='wb') as w:
         for key in sorted(inv_idx):
-            cur_loc = w.tell()
             leng = 0
             k = bytes(key, encoding="utf8")
-            k = bytes(key, encoding="utf8")
-            offset.write(k)
-            offset.write(struct.pack('i', cur_loc))
 
             leng += len(k)
             bar = []
